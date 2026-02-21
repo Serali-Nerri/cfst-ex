@@ -33,8 +33,15 @@ class Extractor:
         """
         paper_id = paper_dir.name
         prompt = (
-            f"目标：请从当前分配给你的文献解析目录中提取出结构化的 CFST 试验数据，严格遵循我们在 System Prompt 中定义的 JSON 格式进行输出。\n"
-            f"操作指南：你需要主动调用 read_markdown 工具来读取正文和表格数据。如果遇到乱码可以去查看原图。\n"
+            f"目标：请从当前分配给你的文献解析目录中提取出结构化的 CFST 试验数据，"
+            f"严格遵循我们在 System Prompt 中定义的 JSON 格式进行输出。\n"
+            f"操作指南：\n"
+            f"1. 先调用 tool_list_directory_files 查看目录中可用的文件。\n"
+            f"2. 调用 read_markdown 读取全文和表格数据。\n"
+            f"3. **必须**调用 inspect_image 查看关键图片（试验装置图、截面示意图、"
+            f"数据表格图），以确认试件截面形状、加载方式（轴压/偏压）、以及校验 OCR 表格数据。"
+            f"不能跳过此步骤，但无需逐张查看所有图片，优先选择与试验配置和数据相关的图片。\n"
+            f"4. 综合文本与图片信息，输出完整的结构化数据。\n"
             f"当前文献目录：{paper_id}\n"
         )
         

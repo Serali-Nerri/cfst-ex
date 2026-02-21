@@ -1,0 +1,39 @@
+# =============================================================================
+# CFST Extractor — Agent 配置模板
+# =============================================================================
+# 复制本文件为 settings.yaml 并填入你的 API 密钥:
+#   cp settings.yaml.example settings.yaml
+#
+# 优先级: 环境变量 > settings.yaml > 代码默认值
+# 对应环境变量: OPENAI_API_KEY, OPENAI_BASE_URL, CFST_MODEL
+# =============================================================================
+
+api:
+  api_key: "your-api-key-here"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+model:
+  # pydantic-ai 模型标识符 (格式: "provider:model_name")
+  # 示例:
+  #   openai:qwen3.5-plus            — 阿里云百炼 (通义千问)
+  #   openai:gpt-5.3-codex           — 通过中转代理调用
+  #   google-gla:gemini-2.5-pro      — 直接调用 Google API
+  name: "openai:qwen3.5-plus"
+
+agent:
+  retries: 3
+
+  # 平台预设 — 自动选择正确的 HTTP 补丁组合
+  # 可选值: dashscope | openai | local_proxy | custom
+  #   dashscope   → flatten_defs + fix_tool_choice + fix_anyof
+  #   openai      → 无补丁 (原生兼容)
+  #   local_proxy → flatten_defs + fix_anyof + xhigh
+  #   custom      → 无预设，完全由下方 patches 手动配置
+  platform: "dashscope"
+
+  # 可选: 手动覆盖预设中的单项补丁
+  # patches:
+  #   flatten_defs: true
+  #   fix_tool_choice: true
+  #   fix_anyof: true
+  #   xhigh: false
