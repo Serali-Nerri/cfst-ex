@@ -200,9 +200,9 @@ def tool_execute_python_calc(ctx: RunContext[Path], expression: str) -> float:
     return execute_python_calc(expression)
 
 @cfst_agent.tool
-def tool_inspect_image(ctx: RunContext[Path], image_path: str) -> bytes:
+def tool_inspect_image(ctx: RunContext[Path], image_path: str, reason: str) -> bytes:
     """
-    视觉读取工具。传入相对于论文目录的图片路径（如 'auto/images/img_1.jpg'）。
-    如果 Markdown 表格损坏或不确定，使用此工具查看原始图片。
+    视觉读取工具。传入相对于论文目录的图片路径（如 'images/table_2.jpg'）。
+    参数 reason: 必须用一句话说明你为什么要查看这张图片（例如：发现表格行错位、正文未交代加载方式等）。
     """
-    return inspect_image(ctx.deps, image_path)
+    return inspect_image(ctx.deps, image_path, reason)

@@ -39,8 +39,10 @@ def single(
     out_dir.mkdir(parents=True, exist_ok=True)
         
     ext = Extractor(model=model)
+    from cfst_extractor.agent.agent import cfst_agent
     
-    typer.echo(f"Starting extraction for {doc_dir.name} using {ext.model or 'gemini-2.5-pro'}...")
+    actual_model = ext.model or cfst_agent.model.model_name
+    typer.echo(f"Starting extraction for {doc_dir.name} using {actual_model}...")
     result: PaperExtraction = asyncio.run(ext.extract(doc_dir))
 
     valid = (len(result.Group_A) + len(result.Group_B) + len(result.Group_C)) > 0

@@ -91,13 +91,43 @@ def execute_python_calc(expression: str) -> float:
         raise ValueError(f"计算表达式 '{expression}' 时出错: {e}")
 
 
-def inspect_image(paper_dir: Path, image_path: str) -> bytes:
+def inspect_image(paper_dir: Path, image_path: str, reason: str) -> bytes:
     """
-    视觉读取工具。传入相对于论文目录的图片路径（如 'images/table_2.jpg'）。
+    视觉读取工具。
+    传入相对于论文目录的图片路径（如 'auto/images/img_1.jpg'）。
+    参数 reason: 必须用一句话说明你为什么要查看这张图片（例如：发现表格数据错位需校验，或未交代加载方式等）。
     """
-    typer.secho(f"  [Agent] 👁️ 正在查阅原图以校验 OCR 表格: {image_path}", fg=typer.colors.CYAN)
+    typer.secho(f"  [Agent] 👁️ 决定查阅图片: {image_path}", fg=typer.colors.CYAN)
+    typer.secho(f"  [Agent] 🤔 查阅理由: {reason}", fg=typer.colors.MAGENTA)
+    
     full_path = paper_dir / image_path
     if not full_path.exists():
         raise FileNotFoundError(f"找不到图片: {image_path}，建议先用 list_directory_files 检查可用图片路径。")
     
-    return full_path.read_bytes()
+    original_bytes = full_path.read_bytes()
+    
+    import io
+    from PIL import Image
+    try:
+        with Image.open(full_path) as img:
+            # 转换为 RGB (防止带有 alpha 通道的图或调色板图报错)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            
+            # 缩放至最大 1024x1024，保持宽高比
+            max_size = (1024, 1024)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # 压缩为质量 75 的 JPEG
+            buffer = io.BytesIO()
+            img.save(buffer, format="JPEG", quality=75)
+            compressed_bytes = buffer.getvalue()
+            
+            typer.secho(f"  [Agent] 📉 图片已压缩: {len(original_bytes)//1024}KB -> {len(compressed_bytes)//1024}KB", dim=True)
+            return compressed_bytes
+    except ImportError:
+        typer.secho("  [Agent] ❌ 缺少 Pillow 库，退回原图（请运行 uv add pillow）", fg=typer.colors.RED)
+        return original_bytes
+    except Exception as e:
+        typer.secho(f"  [Agent] ❌ 图片压缩失败, 降级返回原图: {e}", fg=typer.colors.RED)
+        return original_bytes
