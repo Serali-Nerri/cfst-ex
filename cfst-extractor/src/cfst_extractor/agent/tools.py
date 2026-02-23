@@ -10,7 +10,7 @@ def list_directory_files(paper_dir: Path) -> list[str]:
     """
     列出当前论文解析目录中的所有可用文件列表。
     """
-    typer.secho(f"  [Agent] 📂 正在检索可用文件列表: {paper_dir.name}", fg=typer.colors.CYAN)
+    typer.secho(f"› Tool list_directory_files called with paper_dir='{paper_dir.name}'", dim=True)
     files = []
     if not paper_dir.exists():
         return [f"错误：目录 {paper_dir} 不存在"]
@@ -37,7 +37,7 @@ def read_markdown(paper_dir: Path) -> str:
             main_md = md
             break
             
-    typer.secho(f"  [Agent] 📖 正在精读全文: {main_md.name} (以提取表格数据)", fg=typer.colors.CYAN)
+    typer.secho(f"› Tool read_markdown called with main_md='{main_md.name}'", dim=True)
     try:
         content = main_md.read_text(encoding="utf-8")
         return content
@@ -49,7 +49,7 @@ def execute_python_calc(expression: str) -> float:
     """
     一个 Python 计算器。当你需要进行单位转换（如 MPa 换算）、尺寸计算（如通过外径和厚度计算内径）时，传入有效的单行 Python 算术表达式，返回精确浮点数。
     """
-    typer.secho(f"  [Agent] 🧮 正在计算参数: {expression}", fg=typer.colors.CYAN)
+    typer.secho(f"› Tool execute_python_calc called with expression='{expression}'", dim=True)
     allowed_ops = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -97,8 +97,7 @@ def inspect_image(paper_dir: Path, image_path: str, reason: str) -> bytes:
     传入相对于论文目录的图片路径（如 'auto/images/img_1.jpg'）。
     参数 reason: 必须用一句话说明你为什么要查看这张图片（例如：发现表格数据错位需校验，或未交代加载方式等）。
     """
-    typer.secho(f"  [Agent] 👁️ 决定查阅图片: {image_path}", fg=typer.colors.CYAN)
-    typer.secho(f"  [Agent] 🤔 查阅理由: {reason}", fg=typer.colors.MAGENTA)
+    typer.secho(f"› Tool inspect_image called with image_path='{image_path}', reason='{reason}'", dim=True)
     
     full_path = paper_dir / image_path
     if not full_path.exists():
@@ -114,8 +113,8 @@ def inspect_image(paper_dir: Path, image_path: str, reason: str) -> bytes:
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
             
-            # 缩放至最大 1024x1024，保持宽高比
-            max_size = (1024, 1024)
+            # 缩放至最大 512x512，保持宽高比，减少输入 token
+            max_size = (512, 512)
             img.thumbnail(max_size, Image.Resampling.LANCZOS)
             
             # 压缩为质量 75 的 JPEG
@@ -123,11 +122,11 @@ def inspect_image(paper_dir: Path, image_path: str, reason: str) -> bytes:
             img.save(buffer, format="JPEG", quality=75)
             compressed_bytes = buffer.getvalue()
             
-            typer.secho(f"  [Agent] 📉 图片已压缩: {len(original_bytes)//1024}KB -> {len(compressed_bytes)//1024}KB", dim=True)
+            typer.secho(f"› Image compressed: {len(original_bytes)//1024}KB -> {len(compressed_bytes)//1024}KB", dim=True)
             return compressed_bytes
     except ImportError:
-        typer.secho("  [Agent] ❌ 缺少 Pillow 库，退回原图（请运行 uv add pillow）", fg=typer.colors.RED)
+        typer.secho("› Error: Pillow library missing, returning original image (run uv add pillow)", dim=True)
         return original_bytes
     except Exception as e:
-        typer.secho(f"  [Agent] ❌ 图片压缩失败, 降级返回原图: {e}", fg=typer.colors.RED)
+        typer.secho(f"› Error: Image compression failed, returning original image: {e}", dim=True)
         return original_bytes

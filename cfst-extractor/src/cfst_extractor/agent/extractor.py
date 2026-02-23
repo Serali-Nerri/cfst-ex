@@ -35,15 +35,14 @@ class Extractor:
         prompt = (
             f"目标：请从当前分配给你的文献解析目录中提取出结构化的 CFST 试验数据，"
             f"严格遵循我们在 System Prompt 中定义的 JSON 格式进行输出。\n"
-            f"操作指南与校验机制：\n"
-            f"1. 【基础阅读】调用 read_markdown 读取 Markdown 正文。由于解析质量很高，多数数据可直接提取。\n"
-            f"2. 【表格错位排查】检查 Markdown 中的表格数据是否有空缺、单格多值或错位（特别是复杂论文可能出现此类解析错误）。\n"
-            f"   - **若表格清晰无误**：可直接提取数据，无需查阅该表原图。\n"
-            f"   - **⚠️ 绝对禁止猜测与脑补**：如发现单格多值（如 `140.8 141.4`）、行列名字不对齐（如 `S5 R1` 挤在一行）、或者重要参数空缺，**你绝对不能尝试自己用逻辑分配或者切割这些值**！必须找到对应表格的原图路径，调用 inspect_image(image_path, reason='...') 去看真实的截图并以此为准进行更正！\n"
-            f"3. 【加载方式校验】对于关键参数（截面形状、是否轴压偏压），若正文未明确交代，必须定位说明装置的图片路径进行查阅。\n"
-            f"4. 【强制纠错循环】提取时若遇到自己都觉得很可能是排版错误的地方，说明你提取出了脏数据，必须调用看图工具来自我纠正，可以多次查阅不同图片直至无误。\n"
-            f"5. 【运算强制使用工具】任何单位换算、几何计算必须使用 execute_python_calc 工具，绝对禁止心算。\n"
-            f"6. 综合文本与图片信息，输出完整的结构化数据。\n"
+            f"操作指南与校验机制（请严格按以下核心工作流按顺序执行）：\n"
+            f"1. 【基础阅读】首要步骤：调用 `read_markdown` 读取文献的 Markdown 正文文本，以获取全局信息。\n"
+            f"2. 【加载方式判定】关键校验：必须从提取到的图片列表中定位【加载装置示意图】，并强制调用 `inspect_image` 工具查阅该原图。通过原图事实直接评判加载方式是否为偏心加载，且是否为上下等端距离加载（或非等端距离加载）。这一步不可跳过。\n"
+            f"3. 【表格错位排查（强制防坑）】数据提取：基于 Markdown 文本中的表格，仔细对比每一行的物理意义，你必须意识到 MinerU 会把原本分为多行的试件标识（如 C1、C2）强行合并到一个单元格（例如 `C1 C2` 或者 `S5 R1`），这会导致右侧所有的数据列发生严重的行错位和单格多值！\n"
+            f"   - **若表格清晰且试件标识行列一一对应**：直接从文本提取数据，无需查阅表格原图。\n"
+            f"   - **⚠️ 若存在任何异常（尤其是试件名字/Shape列发生合并如 `C1 C2`、数据区出现空格隔开的多个数值如 `76.6 152.3`）**：这代表表格已被严重破坏！绝对禁止运用个人逻辑对数据进行切割分配！你**必须立刻**在图片列表中找到该表格的原图，并调用 `inspect_image` 查看。\n"
+            f"4. 【运算工具使用】任何单位换算、几何截面计算需强制使用 `execute_python_calc` 工具。\n"
+            f"5. 【综合得出结果】最后，结合上述 Markdown 正文、加载装置查阅结果以及任何可能修正过的表格数据，整理得出结论并输出规范的 JSON 数据。\n"
             f"当前文献目录：{paper_id}\n"
         )
         
@@ -53,10 +52,10 @@ class Extractor:
             import typer
             
             if self.model:
-                typer.secho("  [Agent] 🚀 初始化推理核心...", fg=typer.colors.MAGENTA)
+                typer.secho("› Initializing inference core...", dim=True)
                 result = await cfst_agent.run(prompt, deps=paper_dir, model=self.model)
             else:
-                typer.secho("  [Agent] 🚀 初始化推理核心...", fg=typer.colors.MAGENTA)
+                typer.secho("› Initializing inference core...", dim=True)
                 result = await cfst_agent.run(prompt, deps=paper_dir)
                 
             extraction = result.output
